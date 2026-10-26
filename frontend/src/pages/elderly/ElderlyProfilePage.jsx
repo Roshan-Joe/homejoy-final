@@ -73,7 +73,8 @@ export const ElderlyProfilePage = ({ onBack }) => {
       });
       setSuccess('Profile updated successfully!');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Could not save profile. Please try again.');
+      const detail = err.response?.data?.detail;
+      setError(typeof detail === 'string' ? detail : (err.message || 'Could not save profile. Please try again.'));
     } finally {
       setSaving(false);
     }

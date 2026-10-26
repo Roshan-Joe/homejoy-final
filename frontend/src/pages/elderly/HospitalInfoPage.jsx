@@ -26,7 +26,8 @@ export const HospitalInfoPage = ({ onBack }) => {
       await elderlyClientService.updateHospitalInfo(form);
       setSuccess('Hospital information saved!');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Could not save. Please try again.');
+      const detail = err.response?.data?.detail;
+      setError(typeof detail === 'string' ? detail : (err.message || 'Could not save. Please try again.'));
     } finally {
       setSaving(false);
     }

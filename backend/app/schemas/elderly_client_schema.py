@@ -12,6 +12,20 @@ from app.constants import validate_district
 
 
 # ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+ALLOWED_CONDITIONS = [
+    "Diabetes", "Blood Pressure", "Heart Problem", "Arthritis",
+    "Asthma", "Thyroid", "Kidney Problem", "Cholesterol", "Other", "None",
+    "Hypertension (High BP)", "Diabetes (Type 2)", "Heart Condition",
+    "Arthritis / Joint Pain", "Asthma / Breathing", "None / Good Health"
+]
+
+ALLOWED_BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Unknown"]
+
+
+# ---------------------------------------------------------------------------
 # Profile Schemas
 # ---------------------------------------------------------------------------
 
@@ -23,6 +37,7 @@ class ElderlyProfileSelfUpdate(BaseModel):
     gender: Optional[str] = None
     district: Optional[str] = None
     address: Optional[str] = None
+    blood_group: Optional[str] = None
     guardian_name: Optional[str] = None
     guardian_relationship: Optional[str] = None
     guardian_phone: Optional[str] = None
@@ -35,6 +50,14 @@ class ElderlyProfileSelfUpdate(BaseModel):
     def check_self_district(cls, v):
         if v is not None:
             return validate_district(v, required=False)
+        return v
+
+    @field_validator("blood_group")
+    @classmethod
+    def check_blood_group(cls, v):
+        if v is not None and v != "":
+            if v not in ALLOWED_BLOOD_GROUPS:
+                raise ValueError(f"Blood group must be one of: {', '.join(ALLOWED_BLOOD_GROUPS)}")
         return v
 
     @field_validator("date_of_birth")
@@ -95,12 +118,6 @@ class ElderlyProfileResponse(BaseModel):
 # Health Information Schemas
 # ---------------------------------------------------------------------------
 
-ALLOWED_CONDITIONS = [
-    "Diabetes", "Blood Pressure", "Heart Problem", "Arthritis",
-    "Asthma", "Thyroid", "Kidney Problem", "Other", "None"
-]
-
-ALLOWED_BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Unknown"]
 
 
 class HealthInfoUpdate(BaseModel):

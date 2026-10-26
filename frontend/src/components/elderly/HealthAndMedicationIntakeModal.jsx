@@ -16,15 +16,15 @@ import {
 } from 'lucide-react';
 import elderlyClientService from '../../services/elderlyClientService';
 
-const COMMON_CONDITIONS = [
-  'Hypertension (High BP)',
-  'Diabetes (Type 2)',
-  'Heart Condition',
-  'Arthritis / Joint Pain',
-  'Asthma / Breathing',
-  'Cholesterol',
-  'Thyroid',
-  'None / Good Health'
+const CONDITIONS_OPTIONS = [
+  { value: 'Blood Pressure', label: 'Blood Pressure / Hypertension' },
+  { value: 'Diabetes', label: 'Diabetes' },
+  { value: 'Heart Problem', label: 'Heart Condition' },
+  { value: 'Arthritis', label: 'Arthritis / Joint Pain' },
+  { value: 'Asthma', label: 'Asthma / Respiratory' },
+  { value: 'Cholesterol', label: 'Cholesterol' },
+  { value: 'Thyroid', label: 'Thyroid' },
+  { value: 'None', label: 'None / Good Health' }
 ];
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
@@ -74,17 +74,17 @@ export const HealthAndMedicationIntakeModal = ({ isOpen, onClose, onComplete, ca
     }
   };
 
-  const toggleCondition = (cond) => {
-    if (cond === 'None / Good Health') {
-      setSelectedConditions(['None / Good Health']);
+  const toggleCondition = (val) => {
+    if (val === 'None') {
+      setSelectedConditions(['None']);
       return;
     }
     setSelectedConditions(prev => {
-      const filtered = prev.filter(c => c !== 'None / Good Health');
-      if (filtered.includes(cond)) {
-        return filtered.filter(c => c !== cond);
+      const filtered = prev.filter(c => c !== 'None');
+      if (filtered.includes(val)) {
+        return filtered.filter(c => c !== val);
       } else {
-        return [...filtered, cond];
+        return [...filtered, val];
       }
     });
   };
@@ -145,9 +145,13 @@ export const HealthAndMedicationIntakeModal = ({ isOpen, onClose, onComplete, ca
       });
 
       // 2. Update health conditions & allergies
-      const finalConditions = [...selectedConditions];
-      if (otherCondition.trim()) {
-        finalConditions.push(otherCondition.trim());
+      let finalConditions = [...selectedConditions];
+      if (otherCondition.trim() && !finalConditions.includes('Other')) {
+        finalConditions = finalConditions.filter(c => c !== 'None');
+        finalConditions.push('Other');
+      }
+      if (finalConditions.length === 0) {
+        finalConditions = ['None'];
       }
       const allergiesList = allergies
         .split(',')
@@ -194,7 +198,15 @@ export const HealthAndMedicationIntakeModal = ({ isOpen, onClose, onComplete, ca
       if (onClose) onClose();
     } catch (err) {
       console.error('Failed to save health intake details:', err);
-      setError(err.response?.data?.detail || 'Failed to save health information. Please try again.');
+      let errorMsg = 'Failed to save health information. Please try again.';
+      if (typeof err.response?.data?.detail === 'string') {
+        errorMsg = err.response.data.detail;
+      } else if (err.response?.data?.message && typeof err.response.data.message === 'string') {
+        errorMsg = err.response.data.message;
+      } else if (err.message && typeof err.message === 'string') {
+        errorMsg = err.message;
+      }
+      setError(errorMsg);
     } finally {
       setSubmitting(false);
     }
@@ -282,7 +294,7 @@ export const HealthAndMedicationIntakeModal = ({ isOpen, onClose, onComplete, ca
               marginBottom: '20px'
             }}>
               <AlertCircle size={18} style={{ flexShrink: 0 }} />
-              <span>{error}</span>
+              <span>{typeof error === 'string' ? error : (error?.message || JSON.stringify(error))}</span>
             </div>
           )}
 
@@ -400,13 +412,13 @@ export const HealthAndMedicationIntakeModal = ({ isOpen, onClose, onComplete, ca
                   Select Any Existing Health Conditions
                 </label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {COMMON_CONDITIONS.map(cond => {
-                    const isSelected = selectedConditions.includes(cond);
+                  {CONDITIONS_OPTIONS.map(opt => {
+                    const isSelected = selectedConditions.includes(opt.value);
                     return (
                       <button
-                        key={cond}
+                        key={opt.value}
                         type="button"
-                        onClick={() => toggleCondition(cond)}
+                        onClick={() => toggleCondition(opt.value)}
                         style={{
                           padding: '8px 16px',
                           borderRadius: '9999px',
@@ -422,7 +434,7 @@ export const HealthAndMedicationIntakeModal = ({ isOpen, onClose, onComplete, ca
                         }}
                       >
                         {isSelected && <Check size={14} />}
-                        <span>{cond}</span>
+                        <span>{opt.label}</span>
                       </button>
                     );
                   })}

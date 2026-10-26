@@ -378,6 +378,9 @@ class ElderlyClientService:
             updates["gender"] = payload.gender
         if payload.district is not None:
             updates["district"] = payload.district
+        if payload.blood_group is not None:
+            updates["blood_group"] = payload.blood_group
+            updates["health_info.blood_group"] = payload.blood_group
         if payload.address is not None:
             updates["address"] = payload.address.strip()
         if payload.guardian_name is not None:

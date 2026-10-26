@@ -39,7 +39,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Handle Unauthorized errors globally
+// Response Interceptor: Format errors and handle Unauthorized errors globally
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -48,6 +48,30 @@ api.interceptors.response.use(
       localStorage.removeItem('homejoy_token');
       localStorage.removeItem('homejoy_user');
     }
+
+    // Normalize FastAPI / Pydantic validation errors (HTTP 422 or any status)
+    // Converts array of error objects [{type, loc, msg, input, ctx}] into human-readable strings
+    if (error.response && error.response.data) {
+      const { detail } = error.response.data;
+      if (Array.isArray(detail)) {
+        const formatted = detail
+          .map((item) => {
+            if (typeof item === 'string') return item;
+            if (item && typeof item === 'object') {
+              const field = Array.isArray(item.loc) ? item.loc[item.loc.length - 1] : '';
+              const cleanMsg = item.msg ? String(item.msg).replace(/^Value error,\s*/i, '') : 'Invalid value';
+              return field && field !== 'body' ? `${field}: ${cleanMsg}` : cleanMsg;
+            }
+            return String(item);
+          })
+          .filter(Boolean)
+          .join('; ');
+        error.response.data.detail = formatted || 'Validation error. Please verify your input.';
+      } else if (detail && typeof detail === 'object') {
+        error.response.data.detail = detail.msg || detail.message || JSON.stringify(detail);
+      }
+    }
+
     return Promise.reject(error);
   }
 );
